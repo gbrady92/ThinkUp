@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+
 /**
  *
  * webapp/plugins/insightsgenerator/tests/TestOfDiversifyLinksInsight.php
@@ -53,7 +55,7 @@ class TestOfDiversifyLinksInsight extends ThinkUpUnitTestCase {
 
     public function testLessThan5Links() {
         $insight_dao = DAOFactory::getDAO('InsightDAO');
-        $post_builders = array();
+        $builders = array();
 
         $days_ago_3 = date('Y-m-d H:i:s', strtotime('-3 days'));
 
@@ -82,7 +84,7 @@ class TestOfDiversifyLinksInsight extends ThinkUpUnitTestCase {
         $this->assertNull($result);
     }
 
-    public function testNoMajority() {
+    public function testNotGreaterThanHalfMajority() {
         $insight_dao = DAOFactory::getDAO('InsightDAO');
         $post_builders = array();
 
@@ -99,42 +101,58 @@ class TestOfDiversifyLinksInsight extends ThinkUpUnitTestCase {
         $builders[] = FixtureBuilder::build('posts', array('id'=>138, 'post_id'=>138, 'author_user_id'=>7612345,
         'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
         'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
+        'network'=>'twitter', 'post_text'=>'This is an old post http://example1.com/1 with a link.', 'source'=>'web',
+        'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
+        $builders[] = FixtureBuilder::build('links', array('url'=>'http://example1.com/1',
+        'title'=>'Link 1', 'post_key'=>138, 'expanded_url'=>'http://example1.com/1', 'error'=>'', 'image_src'=>''));
+
+        $builders[] = FixtureBuilder::build('posts', array('id'=>139, 'post_id'=>139, 'author_user_id'=>7612345,
+        'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
+        'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
+        'network'=>'twitter', 'post_text'=>'This is an old post http://example1.com/1 with a link.', 'source'=>'web',
+        'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
+        $builders[] = FixtureBuilder::build('links', array('url'=>'http://example1.com/1',
+        'title'=>'Link 1', 'post_key'=>139, 'expanded_url'=>'http://example1.com/1', 'error'=>'', 'image_src'=>''));
+
+        $builders[] = FixtureBuilder::build('posts', array('id'=>150, 'post_id'=>150, 'author_user_id'=>7612345,
+        'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
+        'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
+        'network'=>'twitter', 'post_text'=>'This is an old post http://example1.com/1 with a link.', 'source'=>'web',
+        'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
+        $builders[] = FixtureBuilder::build('links', array('url'=>'http://example1.com/1',
+        'title'=>'Link 1', 'post_key'=>150, 'expanded_url'=>'http://example1.com/1', 'error'=>'', 'image_src'=>''));
+
+        $builders[] = FixtureBuilder::build('posts', array('id'=>140, 'post_id'=>140, 'author_user_id'=>7612345,
+        'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
+        'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
         'network'=>'twitter', 'post_text'=>'This is an old post http://example2.com/1 with a link.', 'source'=>'web',
         'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
         $builders[] = FixtureBuilder::build('links', array('url'=>'http://example2.com/1',
-        'title'=>'Link 1', 'post_key'=>138, 'expanded_url'=>'http://example2.com/1', 'error'=>'', 'image_src'=>''));
+        'title'=>'Link 1', 'post_key'=>140, 'expanded_url'=>'http://example2.com/1', 'error'=>'', 'image_src'=>''));
 
-        $builders[] = FixtureBuilder::build('posts', array('id'=>139, 'post_id'=>139, 'author_user_id'=>7612345,
+        $builders[] = FixtureBuilder::build('posts', array('id'=>141, 'post_id'=>141, 'author_user_id'=>7612345,
+        'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
+        'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
+        'network'=>'twitter', 'post_text'=>'This is an old post http://example2.com/1 with a link.', 'source'=>'web',
+        'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
+        $builders[] = FixtureBuilder::build('links', array('url'=>'http://example2.com/1',
+        'title'=>'Link 1', 'post_key'=>141, 'expanded_url'=>'http://example2.com/1', 'error'=>'', 'image_src'=>''));
+
+        $builders[] = FixtureBuilder::build('posts', array('id'=>142, 'post_id'=>142, 'author_user_id'=>7612345,
+        'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
+        'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
+        'network'=>'twitter', 'post_text'=>'This is an old post http://example2.com/1 with a link.', 'source'=>'web',
+        'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
+        $builders[] = FixtureBuilder::build('links', array('url'=>'http://example2.com/1',
+        'title'=>'Link 1', 'post_key'=>142, 'expanded_url'=>'http://example2.com/1', 'error'=>'', 'image_src'=>''));
+
+        $builders[] = FixtureBuilder::build('posts', array('id'=>143, 'post_id'=>143, 'author_user_id'=>7612345,
         'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
         'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
         'network'=>'twitter', 'post_text'=>'This is an old post http://example3.com/1 with a link.', 'source'=>'web',
         'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
         $builders[] = FixtureBuilder::build('links', array('url'=>'http://example3.com/1',
-        'title'=>'Link 1', 'post_key'=>139, 'expanded_url'=>'http://example3.com/1', 'error'=>'', 'image_src'=>''));
-
-        $builders[] = FixtureBuilder::build('posts', array('id'=>140, 'post_id'=>140, 'author_user_id'=>7612345,
-        'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
-        'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
-        'network'=>'twitter', 'post_text'=>'This is an old post http://example4.com/1 with a link.', 'source'=>'web',
-        'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
-        $builders[] = FixtureBuilder::build('links', array('url'=>'http://example4.com/1',
-        'title'=>'Link 1', 'post_key'=>140, 'expanded_url'=>'http://example4.com/1', 'error'=>'', 'image_src'=>''));
-
-        $builders[] = FixtureBuilder::build('posts', array('id'=>141, 'post_id'=>141, 'author_user_id'=>7612345,
-        'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
-        'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
-        'network'=>'twitter', 'post_text'=>'This is an old post http://example5.com/1 with a link.', 'source'=>'web',
-        'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
-        $builders[] = FixtureBuilder::build('links', array('url'=>'http://example5.com/1',
-        'title'=>'Link 1', 'post_key'=>141, 'expanded_url'=>'http://example5.com/1', 'error'=>'', 'image_src'=>''));
-
-        $builders[] = FixtureBuilder::build('posts', array('id'=>142, 'post_id'=>142, 'author_user_id'=>7612345,
-        'author_username'=>'testeriffic', 'author_fullname'=>'Twitter User', 'author_avatar'=>'avatar.jpg',
-        'in_reply_to_user_id' => NULL,'in_retweet_of_post_id' => NULL,
-        'network'=>'twitter', 'post_text'=>'This is an old post http://example6.com/1 with a link.', 'source'=>'web',
-        'pub_date'=>$days_ago_3, 'reply_count_cache'=>0, 'is_protected'=>0));
-        $builders[] = FixtureBuilder::build('links', array('url'=>'http://example6.com/1',
-        'title'=>'Link 1', 'post_key'=>142, 'expanded_url'=>'http://example6.com/1', 'error'=>'', 'image_src'=>''));
+        'title'=>'Link 1', 'post_key'=>143, 'expanded_url'=>'http://example3.com/1', 'error'=>'', 'image_src'=>''));
 
         $instance = new Instance();
         $instance->id = 10;
@@ -146,7 +164,9 @@ class TestOfDiversifyLinksInsight extends ThinkUpUnitTestCase {
 
         $today = date('Y-m-d');
         $result = $insight_dao->getInsight('diversify_links_weekly', 10, $today);
-        $this->assertNull($result);
+        $this->assertNotEqual(false, strpos($result->related_data, '{"c":[{"v":"example1.com"},{"v":4}]}'));
+        $this->assertNotEqual(false, strpos($result->related_data, '{"c":[{"v":"example2.com"},{"v":3}]}'));
+        $this->assertNotEqual(false, strpos($result->related_data, '{"c":[{"v":"example3.com"},{"v":1}]}'));
 
         $today = date('Y-m-d');
         $result = $insight_dao->getInsight('diversify_links_monthly', 10, $today);
@@ -185,7 +205,7 @@ class TestOfDiversifyLinksInsight extends ThinkUpUnitTestCase {
         $instance->network = 'twitter';
         $insight_plugin = new DiversifyLinksInsight();
         $insight_plugin->generateInsight($instance, null, $posts, 3);
-
+        // sleep(100000000);
 
         $today = date('Y-m-d');
         $result = $insight_dao->getInsight('diversify_links_weekly', 10, $today);
@@ -204,6 +224,8 @@ class TestOfDiversifyLinksInsight extends ThinkUpUnitTestCase {
         $related_data .= ',{"v":50}]}],"cols":[{"type":"string","label":"Url"}';
         $related_data .= ',{"type":"number","label":"Number of Shares"}]}";}';
         $this->assertEqual($related_data, $result->related_data);
+        // $this->debug($this->getRenderedInsightInHTML($result));
+        // $this->debug($this->getRenderedInsightInEmail($result));
     }
 
     public function test100Majority() {
@@ -255,6 +277,8 @@ class TestOfDiversifyLinksInsight extends ThinkUpUnitTestCase {
         $related_data .= ',{"v":100}]}],"cols":[{"type":"string","label":"Url"}';
         $related_data .= ',{"type":"number","label":"Number of Shares"}]}";}';
         $this->assertEqual($related_data, $result->related_data);
+        // $this->debug($this->getRenderedInsightInHTML($result));
+        // $this->debug($this->getRenderedInsightInEmail($result));
     }
 
     public function test50FacebookMajority() {
@@ -308,6 +332,8 @@ class TestOfDiversifyLinksInsight extends ThinkUpUnitTestCase {
         $related_data .= ',{"v":50}]}],"cols":[{"type":"string","label":"Url"}';
         $related_data .= ',{"type":"number","label":"Number of Shares"}]}";}';
         $this->assertEqual($related_data, $result->related_data);
+        // $this->debug($this->getRenderedInsightInHTML($result));
+        // $this->debug($this->getRenderedInsightInEmail($result));
     }
 
 }

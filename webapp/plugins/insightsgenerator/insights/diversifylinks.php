@@ -34,138 +34,33 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
     /**
      * Slug for this insight
      */
-    var $slug = 'diversify_links'; 
+    var $slug = ''; 
     public function generateInsight(Instance $instance, User $user, $last_week_of_posts, $number_days) {
         parent::generateInsight($instance, $user, $last_week_of_posts, $number_days);
         $this->logger->logInfo("Begin generating insight", __METHOD__.','.__LINE__);
+
         $should_generate_insight_weekly = $this->shouldGenerateWeeklyInsight($this->slug, $instance, 'today',
         $regenerate=false, 3);
-      
         $should_generate_insight_monthly = $this->shouldGenerateMonthlyInsight($this->slug, $instance, 'today',
         $regenerate=false, 25);
+        // $should_generate_insight_weekly = true;
+
+
         if($should_generate_insight_weekly) {
             $link_dao = DAOFactory::getDAO('LinkDAO');
-            $terms = new InsightTerms($instance->network);
             $links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id, $instance->network, 0, 7);
-            if(count($links > 5)) {
-                $most_used_url = $this->getUrlData($links, 'most_used_url');
-                if($most_used_url != NULL) {
-                    $url_counts = array();
-                    $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id,
-                    $instance->network, 100, 0); //Gets link objects for use in the graph.
-                    $last_x_links_text ='';
-                    $followers_friends_text = "";
-                    $text1 ='';
-                    $text2 ='';
-                    $text3 = '';
-                    $followers_friends_text = $terms->getNoun('follow', InsightTerms::PLURAL);
-
-                    // if($instance->network == 'twitter') {
-                    //     $followers_friends_text = "followers";
-                    // } else {
-                    //     $followers_friends_text = "friends";
-                    // }
-                   
-                    if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
-                        $fifty_links = array_slice($graph_links, 0, 50, true);
-                        $vis_data = $this->getUrlData($fifty_links,'vis_data');
-                        $last_x_links_text = "Here's a breakdown of $instance->network_username's last ";
-                        $last_x_links_text .= "<strong>50</strong> links:";
-                    } elseif(count($graph_links) == 100) {
-                        $vis_data = $this->getUrlData($graph_links,'vis_data');
-                        $last_x_links_text = "Here's a breakdown of $instance->network_username's last ";
-                        $last_x_links_text .= "<strong>100</strong> links:";
-                    }
-                    $text1 = "Over <strong>half</strong> of the links $this->username shared on ";
-                    $text1 .= "$instance->network last week came from <strong>$most_used_url</strong>.<br> ";
-                    $text1 .= "Sharing a variety of links allows $followers_friends_text to find out what interests ";
-                    $text1 .= "$this->username. <br><br> $last_x_links_text";
-                    $text2 = "The <strong>majority</strong> of the links $this->username shared last week went to ";
-                    $text2 .= "<strong>$most_used_url</strong>.<br> Sharing links to different websites is a great way for";
-                    $text2 .= " $followers_friends_text to get to know $this->username. <br><br> ";
-                    $text2 .= "$last_x_links_text";
-                    $text3 = "Over <strong>50%</strong> of the links $this->username shared last week went to ";
-                    $text3 .= "<strong>$most_used_url</strong>.<br> ";
-                    $text3 .= "Did you know using a wide variety of links is a great way $this->username's ";
-                    $text3 .= "$followers_friends_text to learn about $this->username's";
-                    $text3 .= "interests ? <br><br> $last_x_links_text";
-                    $insight = new Insight();
-                    $insight->slug = 'diversify_links_weekly';
-                    $insight->instance_id = $instance->id;
-                    $insight->date = $this->insight_date;
-                    $insight->headline = $this->getVariableCopy(array(
-                        "Why not share a new website this week ?",
-                        "Looks like $instance->network_username likes $most_used_url.",
-                        "Spread the love."
-                    ), array('network' => ucfirst($instance->network)));
-                    $insight->text = $this->getVariableCopy(array(
-                        $text1,$text2,$text3
-                    ));
-                    $insight->setBarChart($vis_data);
-                    $insight->filename = basename(__FILE__, ".php");
-                    $this->insight_dao->insertInsight($insight);
-                } 
+            $slug = "diversify_links_weekly";
+            $time_frame = "week";
+            if(count($links) > 5) {
+               $this->getInsightData($links,$slug,$time_frame,$instance,$link_dao);
             }
-        } 
-        if($should_generate_insight_monthly) {
+        } if($should_generate_insight_monthly) {
             $link_dao = DAOFactory::getDAO('LinkDAO');
             $links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id, $instance->network, 0, date('t'));
-            $most_used_url = $this->getUrlData($links, 'most_used_url');
-            if($most_used_url != NULL) {
-                $resultset;
-                $metadata;
-                $vis_data;
-                $url_counts = array();
-                $last_x_links_text ='';
-                $followers_friends_text = "";
-                $text1 ='';
-                $text2 ='';
-                $text3 = '';
-                $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id, $instance->network,
-                100, 0);
-                if($instance->network == 'twitter') {
-                    $followers_friends_text = "followers";
-                } else {
-                    $followers_friends_text = "friends";
-                }
-                if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
-                    $fifty_links = array_slice($graph_links, 0, 50, true);
-                    $vis_data = $this->getUrlData($fifty_links,'vis_data');
-                    $last_x_links_text = "Here's a breakdown of $instance->network_username's last ";
-                    $last_x_links_text .= "<strong>50</strong> links:";
-                } elseif(count($graph_links) == 100) {
-                    $vis_data = $this->getUrlData($graph_links,'vis_data');
-                    $last_x_links_text = "Here's a breakdown of $instance->network_username's last ";
-                    $last_x_links_text .= "<strong>100</strong> links:";
-                }
-                $text1 = "Over <strong>half</strong> of the links $this->username shared on ";
-                $text1 .= "$instance->network last month came from <strong>$most_used_url</strong>.<br> ";
-                $text1 .= "Sharing a variety of links allows $followers_friends_text to find out what interests ";
-                $text1 .= "$this->username. <br><br> $last_x_links_text";
-                $text2 = "The <strong>majority</strong> of the links $this->username shared last month went to ";
-                $text2 .= "<strong>$most_used_url</strong>.<br> Sharing links to different websites is a great way for";
-                $text2 .= " $followers_friends_text to get to know $this->username. <br><br> ";
-                $text2 .= "$last_x_links_text";
-                $text3 = "Over <strong>50%</strong> of the links $this->username shared last month went to ";
-                $text3 .= "<strong>$most_used_url</strong>.<br> ";
-                $text3 .= "Did you know using a wide variety of links is a great way $this->username's ";
-                $text3 .= "$followers_friends_text to learn about $this->username's";
-                $text3 .= "interests ? <br><br> $last_x_links_text";
-                $insight = new Insight();
-                $insight->slug = 'diversify_links_monthly';
-                $insight->instance_id = $instance->id;
-                $insight->date = $this->insight_date;
-                $insight->headline = $this->getVariableCopy(array(
-                    "Why not share some new websites next month ?",
-                    "Looks like $instance->username's most used website was $most_used_url.",
-                    "Spread the love."
-                ), array('network' => ucfirst($instance->network)));
-                $insight->text = $this->getVariableCopy(array(
-                    $text1,$text2,$text3
-                ));
-                $insight->setBarChart($vis_data);
-                $insight->filename = basename(__FILE__, ".php");
-                $this->insight_dao->insertInsight($insight);
+            $slug = "diversify_links_monthly";
+            $time_frame = "month";
+            if(count($links > 5)) {
+                $this->getInsightData($links,$slug,$time_frame,$instance,$link_dao);
             }
         }
         $this->logger->logInfo("Done generating insight", __METHOD__.','.__LINE__);
@@ -181,13 +76,9 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
      * @return json Contains data to be passed to GoogleCharts.
      */
     private function getUrlData($links, $get_option) {
-        $domain_start;
-        $domain_end;
         $domain;
         $url_counts = array();
-        // if(count($links) < 5) {
-        //     return null;
-        // }
+
         foreach($links as $link) {
             if($link->expanded_url == "") {
                 continue;
@@ -201,6 +92,10 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
                 $url_counts[$domain] = 1;
             }
         }
+        if($get_option == 'popular_url') {
+            return array_search(max($url_counts),$url_counts);
+        }
+
         if($get_option == 'most_used_url') {
             if(max($url_counts)/array_sum($url_counts) > 0.5) {
                 return array_search(max($url_counts),$url_counts);
@@ -218,6 +113,77 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
             }
             $vis_data = json_encode(array('rows' => $resultset, 'cols' => $metadata));
             return $vis_data;
+        }
+    }
+
+    private function getInsightData($links, $slug, $time_frame,$instance,$link_dao) {
+        $insight = new Insight();
+        $terms = new InsightTerms($instance->network);
+        $most_used_url = $this->getUrlData($links, 'most_used_url');
+        if($most_used_url == NULL && $slug == 'diversify_links_weekly') {
+            $popular_url = $this->getUrlData($links, 'popular_url');
+            $vis_data = $this->getUrlData($links,'vis_data');
+            $insight->slug = $slug;
+            $insight->instance_id = $instance->id;
+            $insight->date = $this->insight_date;
+            $insight->headline = $this->getVariableCopy(array(
+                "So what websites did %username like this week ?",
+                "What websites did %username feel had to be shared this week ?",
+                "Somethings are too good not to share."
+            ), array('network' => ucfirst($instance->network)));
+            $insight->text = $this->getVariableCopy(array(
+                "$popular_url","$popular_url","$popular_url"
+            ));
+            $insight->setBarChart($vis_data);
+            $insight->filename = basename(__FILE__, ".php");
+            $this->insight_dao->insertInsight($insight);
+        } elseif($most_used_url != NULL) {
+            $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id,
+            $instance->network, 100, 0); //Gets link objects for use in the graph.
+            $last_x_links_text ='';
+            // $text1 ='';
+            // $text2 ='';
+            // $text3 = '';
+            $followers_friends_text = $terms->getNoun('follower', InsightTerms::PLURAL);
+
+            if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
+                $fifty_links = array_slice($graph_links, 0, 50, true);
+                $vis_data = $this->getUrlData($fifty_links,'vis_data');
+                $last_x_links_text = "Here's a breakdown of $instance->network_username's last ";
+                $last_x_links_text .= "<strong>50</strong> links:";
+                $insight->setBarChart($vis_data);
+            } elseif(count($graph_links) == 100) {
+                $vis_data = $this->getUrlData($graph_links,'vis_data');
+                $last_x_links_text = "Here's a breakdown of $instance->network_username's last ";
+                $last_x_links_text .= "<strong>100</strong> links:";
+                $insight->setBarChart($vis_data);
+            }
+            $text1 = "Over <strong>half</strong> of the links $this->username shared on ";
+            $text1 .= "$instance->network last $time_frame came from <strong>$most_used_url</strong>.<br> ";
+            $text1 .= "Sharing a variety of links allows $followers_friends_text to find out what interests ";
+            $text1 .= "$this->username. <br><br> $last_x_links_text";
+            $text2 = "The <strong>majority</strong> of the links $this->username shared last $time_frame went to ";
+            $text2 .= "<strong>$most_used_url</strong>.<br> Sharing links to different websites is a great way for";
+            $text2 .= " $followers_friends_text to get to know $this->username. <br><br> ";
+            $text2 .= "$last_x_links_text";
+            $text3 = "Over <strong>50%</strong> of the links $this->username shared last $time_frame went to ";
+            $text3 .= "<strong>$most_used_url</strong>.<br> ";
+            $text3 .= "Did you know using a wide variety of links is a great way $this->username's ";
+            $text3 .= "$followers_friends_text to learn about $this->username's";
+            $text3 .= "interests ? <br><br> $last_x_links_text";
+            $insight->slug = $slug;
+            $insight->instance_id = $instance->id;
+            $insight->date = $this->insight_date;
+            $insight->headline = $this->getVariableCopy(array(
+                "Why not share a new website this week ?",
+                "Looks like $instance->network_username likes $most_used_url.",
+                "Spread the love."
+            ), array('network' => ucfirst($instance->network)));
+            $insight->text = $this->getVariableCopy(array(
+                $text1,$text2,$text3
+            ));
+            $insight->filename = basename(__FILE__, ".php");
+            $this->insight_dao->insertInsight($insight);
         }
     }
 }
