@@ -39,11 +39,12 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
         parent::generateInsight($instance, $user, $last_week_of_posts, $number_days);
         $this->logger->logInfo("Begin generating insight", __METHOD__.','.__LINE__);
 
-        $should_generate_insight_weekly = $this->shouldGenerateWeeklyInsight($this->slug, $instance, 'today',
-        $regenerate=false, 3);
-        $should_generate_insight_monthly = $this->shouldGenerateMonthlyInsight($this->slug, $instance, 'today',
-        $regenerate=false, 25);
+        // $should_generate_insight_weekly = $this->shouldGenerateWeeklyInsight($this->slug, $instance, 'today',
+        // $regenerate=false, 3);
+        // $should_generate_insight_monthly = $this->shouldGenerateMonthlyInsight($this->slug, $instance, 'today',
+        // $regenerate=false, 25);
         // $should_generate_insight_weekly = true;
+        $should_generate_insight_monthly = true;
 
 
         if($should_generate_insight_weekly) {
@@ -137,13 +138,27 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
             $insight->setBarChart($vis_data);
             $insight->filename = basename(__FILE__, ".php");
             $this->insight_dao->insertInsight($insight);
+        } elseif($most_used_url == NULL && $slug == 'diversify_links_monthly') {
+            $popular_url = $this->getUrlData($links, 'popular_url');
+            $vis_data = $this->getUrlData($links,'vis_data');
+            $insight->slug = $slug;
+            $insight->instance_id = $instance->id;
+            $insight->date = $this->insight_date;
+            $insight->headline = $this->getVariableCopy(array(
+                "So what websites did %username like this month ?",
+                "What websites did %username feel had to be shared this month ?",
+                "Somethings are too good not to share month."
+            ), array('network' => ucfirst($instance->network)));
+            $insight->text = $this->getVariableCopy(array(
+                "$popular_url","$popular_url","$popular_url"
+            ));
+            $insight->setBarChart($vis_data);
+            $insight->filename = basename(__FILE__, ".php");
+            $this->insight_dao->insertInsight($insight);
         } elseif($most_used_url != NULL) {
             $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id,
             $instance->network, 100, 0); //Gets link objects for use in the graph.
             $last_x_links_text ='';
-            // $text1 ='';
-            // $text2 ='';
-            // $text3 = '';
             $followers_friends_text = $terms->getNoun('follower', InsightTerms::PLURAL);
 
             if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
