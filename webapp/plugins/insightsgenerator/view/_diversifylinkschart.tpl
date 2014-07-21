@@ -28,6 +28,7 @@ function drawChart{/literal}{$i->id}() {literal}{
           height: 200,
           width: 290,
           legend: "none",
+          pieHole: 0.4,
           interpolateNulls: true,
           pointSize: 4,
           colors : [color],

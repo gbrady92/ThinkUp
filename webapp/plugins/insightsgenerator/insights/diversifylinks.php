@@ -121,41 +121,28 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
         $insight = new Insight();
         $terms = new InsightTerms($instance->network);
         $most_used_url = $this->getUrlData($links, 'most_used_url');
-        if($most_used_url == NULL && $slug == 'diversify_links_weekly') {
+        if($most_used_url == NULL) {
             $popular_url = $this->getUrlData($links, 'popular_url');
             $vis_data = $this->getUrlData($links,'vis_data');
             $insight->slug = $slug;
             $insight->instance_id = $instance->id;
             $insight->date = $this->insight_date;
-            $insight->headline = $this->getVariableCopy(array(
-                "So what websites did %username like this week ?",
-                "What websites did %username feel had to be shared this week ?",
-                "Somethings are too good not to share."
-            ), array('network' => ucfirst($instance->network)));
             $insight->text = $this->getVariableCopy(array(
-                "$popular_url","$popular_url","$popular_url"
-            ));
-            $insight->setBarChart($vis_data);
-            $insight->filename = basename(__FILE__, ".php");
-            $this->insight_dao->insertInsight($insight);
-        } elseif($most_used_url == NULL && $slug == 'diversify_links_monthly') {
-            $popular_url = $this->getUrlData($links, 'popular_url');
-            $vis_data = $this->getUrlData($links,'vis_data');
-            $insight->slug = $slug;
-            $insight->instance_id = $instance->id;
-            $insight->date = $this->insight_date;
+              "Looks like %username's most shared site was $popular_url",
+              "%username must like $popular_url because it's last $time_frame's most shared site.",
+              "Looks like $popular_url was last $time_frame's most shared site."
+              ));
             $insight->headline = $this->getVariableCopy(array(
-                "So what websites did %username like this month ?",
-                "What websites did %username feel had to be shared this month ?",
-                "Somethings are too good not to share month."
-            ), array('network' => ucfirst($instance->network)));
-            $insight->text = $this->getVariableCopy(array(
-                "$popular_url","$popular_url","$popular_url"
-            ));
-            $insight->setBarChart($vis_data);
-            $insight->filename = basename(__FILE__, ".php");
-            $this->insight_dao->insertInsight($insight);
-        } elseif($most_used_url != NULL) {
+                    "What links has %username been sharing over the last $time_frame ?",
+                    "Here's a breakdown of the links %username shared last $time_frame.",
+                    "Lets see what links %username liked to share last $time_frame."
+                ), array('network' => ucfirst($instance->network)));
+          $insight->setBarChart($vis_data);
+          $insight->filename = basename(__FILE__, ".php");
+          $this->insight_dao->insertInsight($insight);
+        }
+
+        if($most_used_url != NULL) {
             $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id,
             $instance->network, 100, 0); //Gets link objects for use in the graph.
             $last_x_links_text ='';
@@ -164,33 +151,24 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
             if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
                 $fifty_links = array_slice($graph_links, 0, 50, true);
                 $vis_data = $this->getUrlData($fifty_links,'vis_data');
-                $last_x_links_text = "Here's a breakdown of $instance->network_username's last ";
-                $last_x_links_text .= "<strong>50</strong> links:";
                 $insight->setBarChart($vis_data);
             } elseif(count($graph_links) == 100) {
                 $vis_data = $this->getUrlData($graph_links,'vis_data');
-                $last_x_links_text = "Here's a breakdown of $instance->network_username's last ";
-                $last_x_links_text .= "<strong>100</strong> links:";
                 $insight->setBarChart($vis_data);
             }
-            $text1 = "Over <strong>half</strong> of the links $this->username shared on ";
-            $text1 .= "$instance->network last $time_frame came from <strong>$most_used_url</strong>.<br> ";
-            $text1 .= "Sharing a variety of links allows $followers_friends_text to find out what interests ";
+            $text1 = "Over <strong>half</strong> of the links $this->username shared ";
+            $text1 .= "last $time_frame came from <strong>$most_used_url</strong>.<br> ";
+            $text1 .= "";
             $text1 .= "$this->username. <br><br> $last_x_links_text";
-            $text2 = "The <strong>majority</strong> of the links $this->username shared last $time_frame went to ";
-            $text2 .= "<strong>$most_used_url</strong>.<br> Sharing links to different websites is a great way for";
-            $text2 .= " $followers_friends_text to get to know $this->username. <br><br> ";
-            $text2 .= "$last_x_links_text";
+            $text2 = "More than <strong>50%</strong> of the links $this->username shared last $time_frame went to ";
+            $text2 .= "<strong>$most_used_url</strong>.<br>";
             $text3 = "Over <strong>50%</strong> of the links $this->username shared last $time_frame went to ";
             $text3 .= "<strong>$most_used_url</strong>.<br> ";
-            $text3 .= "Did you know using a wide variety of links is a great way $this->username's ";
-            $text3 .= "$followers_friends_text to learn about $this->username's";
-            $text3 .= "interests ? <br><br> $last_x_links_text";
             $insight->slug = $slug;
             $insight->instance_id = $instance->id;
             $insight->date = $this->insight_date;
             $insight->headline = $this->getVariableCopy(array(
-                "Why not share a new website this week ?",
+                "What link was %username's clear favorite last $time_frame ?",
                 "Looks like $instance->network_username likes $most_used_url.",
                 "Spread the love."
             ), array('network' => ucfirst($instance->network)));
