@@ -39,12 +39,12 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
         parent::generateInsight($instance, $user, $last_week_of_posts, $number_days);
         $this->logger->logInfo("Begin generating insight", __METHOD__.','.__LINE__);
 
-        // $should_generate_insight_weekly = $this->shouldGenerateWeeklyInsight($this->slug, $instance, 'today',
-        // $regenerate=false, 3);
-        // $should_generate_insight_monthly = $this->shouldGenerateMonthlyInsight($this->slug, $instance, 'today',
-        // $regenerate=false, 25);
+        $should_generate_insight_weekly = $this->shouldGenerateWeeklyInsight($this->slug, $instance, 'today',
+        $regenerate=false, 3);
+        $should_generate_insight_monthly = $this->shouldGenerateMonthlyInsight($this->slug, $instance, 'today',
+        $regenerate=false, 25);
         // $should_generate_insight_weekly = true;
-        $should_generate_insight_monthly = true;
+        // $should_generate_insight_monthly = true;
 
 
         if($should_generate_insight_weekly) {
@@ -57,10 +57,10 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
             }
         } if($should_generate_insight_monthly) {
             $link_dao = DAOFactory::getDAO('LinkDAO');
-            $links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id, $instance->network, 0, date('t'));
+            $links =$link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id, $instance->network, 0, date('t'));
             $slug = "diversify_links_monthly";
             $time_frame = "month";
-            if(count($links > 5)) {
+            if(count($links ) > 5) {
                 $this->getInsightData($links,$slug,$time_frame,$instance,$link_dao);
             }
         }
@@ -123,12 +123,11 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
         $most_used_url = $this->getUrlData($links, 'most_used_url');
         if($most_used_url == NULL) {
             $popular_url = $this->getUrlData($links, 'popular_url');
-            $vis_data = $this->getUrlData($links,'vis_data');
             $insight->slug = $slug;
             $insight->instance_id = $instance->id;
             $insight->date = $this->insight_date;
             $insight->text = $this->getVariableCopy(array(
-              "Looks like %username's most shared site was $popular_url",
+              "Looks like %username's most shared site last $time_frame was $popular_url.",
               "%username must like $popular_url because it's last $time_frame's most shared site.",
               "Looks like $popular_url was last $time_frame's most shared site."
               ));
@@ -137,33 +136,16 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
                     "Here's a breakdown of the links %username shared last $time_frame.",
                     "Lets see what links %username liked to share last $time_frame."
                 ), array('network' => ucfirst($instance->network)));
-          $insight->setBarChart($vis_data);
           $insight->filename = basename(__FILE__, ".php");
-          $this->insight_dao->insertInsight($insight);
         }
 
         if($most_used_url != NULL) {
-            $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id,
-            $instance->network, 100, 0); //Gets link objects for use in the graph.
-            $last_x_links_text ='';
-            $followers_friends_text = $terms->getNoun('follower', InsightTerms::PLURAL);
-
-            if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
-                $fifty_links = array_slice($graph_links, 0, 50, true);
-                $vis_data = $this->getUrlData($fifty_links,'vis_data');
-                $insight->setBarChart($vis_data);
-            } elseif(count($graph_links) == 100) {
-                $vis_data = $this->getUrlData($graph_links,'vis_data');
-                $insight->setBarChart($vis_data);
-            }
-            $text1 = "Over <strong>half</strong> of the links $this->username shared ";
-            $text1 .= "last $time_frame came from <strong>$most_used_url</strong>.<br> ";
-            $text1 .= "";
-            $text1 .= "$this->username. <br><br> $last_x_links_text";
+            $text1 = "Over <b>half</b> of the links $this->username shared ";
+            $text1 .= "last $time_frame came from $most_used_url.";
             $text2 = "More than <strong>50%</strong> of the links $this->username shared last $time_frame went to ";
-            $text2 .= "<strong>$most_used_url</strong>.<br>";
+            $text2 .= "$most_used_url.";
             $text3 = "Over <strong>50%</strong> of the links $this->username shared last $time_frame went to ";
-            $text3 .= "<strong>$most_used_url</strong>.<br> ";
+            $text3 .= "$most_used_url.";
             $insight->slug = $slug;
             $insight->instance_id = $instance->id;
             $insight->date = $this->insight_date;
@@ -176,8 +158,23 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
                 $text1,$text2,$text3
             ));
             $insight->filename = basename(__FILE__, ".php");
-            $this->insight_dao->insertInsight($insight);
         }
+        $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id,
+        $instance->network, 100, 0); //Gets link objects for use in the graph.
+        if(count($graph_links) < 50) {
+            $vis_data = $this->getUrlData($links,'vis_data');
+            $insight->setBarChart($vis_data);
+        }
+        if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
+            $fifty_links = array_slice($graph_links, 0, 50, true);
+            $vis_data = $this->getUrlData($fifty_links,'vis_data');
+            $insight->setBarChart($vis_data);
+        }
+        if(count($graph_links) == 100) {
+            $vis_data = $this->getUrlData($graph_links,'vis_data');
+            $insight->setBarChart($vis_data);
+        }
+        $this->insight_dao->insertInsight($insight);
     }
 }
 
