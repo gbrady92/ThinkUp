@@ -43,8 +43,8 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
         $regenerate=false, 3);
         $should_generate_insight_monthly = $this->shouldGenerateMonthlyInsight($this->slug, $instance, 'today',
         $regenerate=false, 25);
-        // $should_generate_insight_weekly = true;
-        // $should_generate_insight_monthly = true;
+        $should_generate_insight_weekly = true;
+        
 
 
         if($should_generate_insight_weekly) {
@@ -71,8 +71,8 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
      * if it accounts for over 50% of all links shared.
      * Creats vis_data for pie_chart.
      *
-     * @param arr array of links.
-     * @param str string declaring what data user wants returned.
+     * @param arr $links.
+     * @param str $get_option.
      * @return str The url of the site or NULL.
      * @return json Contains data to be passed to GoogleCharts.
      */
@@ -116,21 +116,48 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
             return $vis_data;
         }
     }
-
+    /**
+     * Creates text and headline strings and gets data for vis_data. Inserts Insight.
+     * @param arr $links.
+     * @param str $slug.
+     * @param str $time_frame.
+     * @param instance $instance.
+     * @param dao $link_dao.
+     */
     private function getInsightData($links, $slug, $time_frame,$instance,$link_dao) {
         $insight = new Insight();
         $terms = new InsightTerms($instance->network);
         $most_used_url = $this->getUrlData($links, 'most_used_url');
+        $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id,
+        $instance->network, 100, 0); //Gets link objects for use in the graph.
+        if(count($graph_links) < 50) {
+            $vis_data = $this->getUrlData($links,'vis_data');
+            $insight->setBarChart($vis_data);
+        }
+        if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
+            $fifty_links = array_slice($graph_links, 0, 50, true);
+            $vis_data = $this->getUrlData($fifty_links,'vis_data');
+            $insight->setBarChart($vis_data);
+            $text_ending = "Here's %username's last 50 shared links:";
+        }
+        if(count($graph_links) == 100) {
+            $vis_data = $this->getUrlData($graph_links,'vis_data');
+            $insight->setBarChart($vis_data);
+            $text_ending = "Here's %username's last 100 shared links:";
+        }
         if($most_used_url == NULL) {
             $popular_url = $this->getUrlData($links, 'popular_url');
             $insight->slug = $slug;
             $insight->instance_id = $instance->id;
             $insight->date = $this->insight_date;
+            $text1 = "Looks like %username's most shared site last <b>$time_frame</b> was";
+            $text1 .= " <a href='http://$popular_url'> $popular_url.</a><br> $text_ending";
+            $text2 = "%username must like <a href='http://$popular_url'> $popular_url.</a>";
+            $text2 .= " because it's last <b>$time_frame's</b> most shared site.<br> $text_ending";
+            $text3 = "Looks like <a href='http://$popular_url'> $popular_url.</a>";
+            $text3 .= " was last <b>$time_frame's</b> most shared site. <br> $text_ending";
             $insight->text = $this->getVariableCopy(array(
-              "Looks like %username's most shared site last $time_frame was $popular_url.",
-              "%username must like $popular_url because it's last $time_frame's most shared site.",
-              "Looks like $popular_url was last $time_frame's most shared site."
-              ));
+              $text1,$text2,$text3));
             $insight->headline = $this->getVariableCopy(array(
                     "What links has %username been sharing over the last $time_frame ?",
                     "Here's a breakdown of the links %username shared last $time_frame.",
@@ -141,11 +168,12 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
 
         if($most_used_url != NULL) {
             $text1 = "Over <b>half</b> of the links $this->username shared ";
-            $text1 .= "last $time_frame came from $most_used_url.";
-            $text2 = "More than <strong>50%</strong> of the links $this->username shared last $time_frame went to ";
-            $text2 .= "$most_used_url.";
-            $text3 = "Over <strong>50%</strong> of the links $this->username shared last $time_frame went to ";
-            $text3 .= "$most_used_url.";
+            $text1 .= "last <b>$time_frame</b> came from <a href='http://$most_used_url'> $most_used_url.</a>";
+            $text1 .= " $text_ending";
+            $text2 = "More than <b>50%</b> of the links $this->username shared last <b>$time_frame</b> went to ";
+            $text2 .= "<a href='http://$most_used_url'> $most_used_url.</a> $text_ending";
+            $text3 = "Over <b>50%</b> of the links $this->username shared last <b>$time_frame</b> went to ";
+            $text3 .= "<a href='http://$most_used_url'> $most_used_url.</a> $text_ending";
             $insight->slug = $slug;
             $insight->instance_id = $instance->id;
             $insight->date = $this->insight_date;
@@ -158,21 +186,6 @@ class DiversifyLinksInsight extends InsightPluginParent implements InsightPlugin
                 $text1,$text2,$text3
             ));
             $insight->filename = basename(__FILE__, ".php");
-        }
-        $graph_links = $link_dao->getLinksByUserSinceDaysAgo($instance->network_user_id,
-        $instance->network, 100, 0); //Gets link objects for use in the graph.
-        if(count($graph_links) < 50) {
-            $vis_data = $this->getUrlData($links,'vis_data');
-            $insight->setBarChart($vis_data);
-        }
-        if(count($graph_links) >= 50 && count($graph_links) < 100 ) {
-            $fifty_links = array_slice($graph_links, 0, 50, true);
-            $vis_data = $this->getUrlData($fifty_links,'vis_data');
-            $insight->setBarChart($vis_data);
-        }
-        if(count($graph_links) == 100) {
-            $vis_data = $this->getUrlData($graph_links,'vis_data');
-            $insight->setBarChart($vis_data);
         }
         $this->insight_dao->insertInsight($insight);
     }
